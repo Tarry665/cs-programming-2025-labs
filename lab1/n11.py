@@ -1,0 +1,6 @@
+num = input('Введите три числа ')
+a, b, c = num.split(',')
+a = int(a)
+b = int(b)
+c = int(c)
+print('Результат вычисления:', (a+c)//b)
