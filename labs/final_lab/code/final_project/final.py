@@ -2,7 +2,7 @@ import random
 
 # ==================== КЛАСС ПЕРСОНАЖА ====================
 class Character:
-    def Hero(self, race):
+    def __init__(self, race):
         self.race = race
         self.level = 1
         self.exp = 0
@@ -99,7 +99,7 @@ class Character:
         self.hp_max += 10
         self.hp_current = self.hp_max
         
-        print(f"\n🎉 Поздравляем! Вы достигли {self.level} уровня!")
+        print(f"\n Поздравляем! Вы достигли {self.level} уровня!")
         print(f"Получено 3 очка характеристик!")
     
     def use_stat_point(self):
@@ -187,6 +187,7 @@ class Game:
         self.current_floor = 1
         self.rooms_cleared = 0
         self.game_over = False
+        self.next_rooms = {"left": None, "right": None}  # Для хранения реальных комнат
     
     def create_character(self):
         """Создание персонажа"""
@@ -393,12 +394,24 @@ class Game:
         
         print("\nБой окончен!")
     
-    def generate_room(self):
-        """Генерация комнаты"""
+    def generate_room_type(self):
+        """Сгенерировать тип комнаты с весами"""
         room_types = ["enemy", "chest", "rest", "empty"]
-        weights = [40, 25, 20, 15]  # Вероятности
-        room_type = random.choices(room_types, weights=weights, k=1)[0]
-        
+        weights = [40, 25, 20, 15]
+        return random.choices(room_types, weights=weights, k=1)[0]
+    
+    def get_room_name(self, room_type):
+        """Получить читаемое название комнаты"""
+        names = {
+            "enemy": "Враг",
+            "chest": "Сундук",
+            "rest": "Отдых",
+            "empty": "Пусто"
+        }
+        return names.get(room_type, "???")
+    
+    def generate_specific_room(self, room_type):
+        """Генерация конкретной комнаты по типу"""
         print(f"\n{'='*50}")
         print(f"ЭТАЖ {self.current_floor} | КОМНАТА {self.rooms_cleared + 1}")
         print(f"{'='*50}")
@@ -453,7 +466,7 @@ class Game:
         if self.rooms_cleared >= 5:
             self.current_floor += 1
             self.rooms_cleared = 0
-            print(f"\n✨ Вы спустились на {self.current_floor} этаж! ✨")
+            print(f"\n Вы спустились на {self.current_floor} этаж! ")
             print("Враги стали сильнее...")
     
     def show_paths(self):
@@ -462,23 +475,25 @@ class Game:
         print("ВЫБОР ПУТИ")
         print("="*50)
         
-        # Определяем, что в каждой комнате
-        left_room = self.generate_room_type_info()
-        right_room = self.generate_room_type_info()
+        # Генерируем комнаты
+        self.next_rooms["left"] = self.generate_room_type()
+        self.next_rooms["right"] = self.generate_room_type()
         
         # Определяем видимость
-        left_visible = random.random() < 0.6  # 60% шанс увидеть
+        left_visible = random.random() < 0.6  
         right_visible = random.random() < 0.6
         
         print("\nПеред вами развилка:")
         
         if left_visible:
-            print(f"(1) Слева: {left_room}")
+            left_name = self.get_room_name(self.next_rooms["left"])
+            print(f"(1) Слева: {left_name}")
         else:
             print("(1) Слева: ???")
         
         if right_visible:
-            print(f"(2) Справа: {right_room}")
+            right_name = self.get_room_name(self.next_rooms["right"])
+            print(f"(2) Справа: {right_name}")
         else:
             print("(2) Справа: ???")
         
@@ -489,11 +504,10 @@ class Game:
             choice = input("\nКуда пойти? (1-4): ")
             
             if choice == "1":
-                # Фактически генерируем комнату
-                self.generate_room()
+                self.generate_specific_room(self.next_rooms["left"])
                 break
             elif choice == "2":
-                self.generate_room()
+                self.generate_specific_room(self.next_rooms["right"])
                 break
             elif choice == "3":
                 self.player.show_stats()
@@ -501,11 +515,6 @@ class Game:
                 self.show_inventory_menu()
             else:
                 print("Пожалуйста, выберите 1, 2, 3 или 4")
-    
-    def generate_room_type_info(self):
-        """Сгенерировать информацию о типе комнаты"""
-        types = ["Враг", "Сундук", "Отдых", "Пусто"]
-        return random.choice(types)
     
     def show_inventory_menu(self):
         """Показать меню инвентаря"""
@@ -591,7 +600,7 @@ class Game:
             input("\nНажмите Enter для возврата в главное меню...")
             self.main_menu()
 
-# ==================== ЗАПУСК ИГРЫ ====================
+# ЗАПУСК ИГРЫ
 if __name__ == "__main__":
     print("Добро пожаловать в ТЕКСТОВУЮ RPG!")
     game = Game()
